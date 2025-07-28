@@ -12,4 +12,3 @@ embedding = OpenAI(model="text-embedding-3-large")
 
 vector_db = FAISS.load_local("rsc",embeddings=embedding,allow_dangerous_deserialization=True)
 print("vector loaded")
-print(vector_db)
