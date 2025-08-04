@@ -17,39 +17,78 @@ tavly_key = os.getenv("TAVILY_API_KEY")
 llm = init_chat_model("openai:gpt-4.1")
 
 class State(TypedDict):
-    # Messages have the type "list". The `add_messages` function
-    # in the annotation defines how this state key should be updated
-    # (in this case, it appends messages to the list, rather than overwriting them)
-    name : str
-    age: str
-    skills : list[str]
-    final_result: str
+    numeber1 : int
+    numeber2 : int 
+    operation: str
+    numeber3 : int
+    intermediate_number: int
+    final_number : int
+    operation2 : str
 
-def greeting_node(state:State)-> State:
-    state["final_result"] = state['name'] + " welcome to the system "
+def move_by_operation(state: State) -> State:
+    if state["operation"] == "+":
+        return "add_numbers"
+    elif state["operation"]== "-":
+        return "subtract_numbers"
+    
+def move_by_operation2(state: State) -> State:
+    if state["operation2"] == "+":
+        return "add_numbers"
+    elif state["operation2"]== "-":
+        return "subtract_numbers"        
+
+def add(state:State) -> State:
+    state["numeber3"] = state["numeber1"] + state["numeber2"]
     return state
 
-def user_age(state:State) ->State:
-    state["final_result"] += "You are " + state["age"] + " years old "
+def subtract(state: State) -> State:
+    state["numeber3"] = state["numeber1"] - state["numeber2"]
     return state
 
-def list_skills(state:State) -> State:
-    state["final_result"] += " You have skills in "+ " ".join(state["skills"])
+
+def add2(state:State) -> State:
+    state["final_number"] = state["numeber3"] + state["intermediate_number"]
+    return state
+
+def subtract2(state: State) -> State:
+    state["final_number"] = state["numeber3"] - state["intermediate_number"]
     return state
 
 graph_builder = StateGraph(State)
-graph_builder.add_node("greeting_node",greeting_node)
-graph_builder.add_node("user_age", user_age)
-graph_builder.add_node("list_skills",list_skills)
+graph_builder.add_node("add_node", add)
+graph_builder.add_node("subtract_node", subtract)
 
-graph_builder.add_edge("greeting_node", "user_age")
-graph_builder.add_edge("user_age", "list_skills")
+graph_builder.add_node("add_node2", add2)
+graph_builder.add_node("subtract_node2", subtract2)
 
-graph_builder.set_entry_point("greeting_node")
-graph_builder.set_finish_point("list_skills")
+graph_builder.add_node("router", lambda state:state) # stiamo dicendo che l'input state sarà l'output state
+graph_builder.add_node("router2", lambda state:state)
+graph_builder.add_edge(START, "router") # il nodo router è qualcosa che non viene definito esplicitamente
+
+graph_builder.add_conditional_edges(
+    "router",
+    move_by_operation,
+    {
+        "add_numbers": "add_node",
+        "subtract_numbers": "subtract_node"
+
+    }
+)
+graph_builder.add_edge("add_node", "router2")
+graph_builder.add_edge("subtract_node", "router2")
+
+graph_builder.add_conditional_edges(
+    "router2",
+    move_by_operation2,
+    {
+        "add_numbers": "add_node2",
+        "subtract_numbers": "subtract_node2"
+
+    }
+)
+graph_builder.add_edge("add_node2", END)
+graph_builder.add_edge("subtract_node2",END)
 
 app = graph_builder.compile()
-
-result = app.invoke({"name": "Michele", "age": "21", "skills": ["Deep Learning", "AI", "Machine Learning "]})
-print(result["final_result"])
-
+result = app.invoke({"numeber1": 5, "numeber2": 3, "operation": "+", "intermediate_number": 2, "operation2": "-"})
+print(result)
