@@ -20,25 +20,36 @@ class State(TypedDict):
     # Messages have the type "list". The `add_messages` function
     # in the annotation defines how this state key should be updated
     # (in this case, it appends messages to the list, rather than overwriting them)
-    data : List[int]
     name : str
-    operation: str
+    age: str
+    skills : list[str]
+    final_result: str
 
-def init_list(state: State) -> State:
-    if state["operation"] == "+":
-        state["data"] = sum(state["data"])
-    elif state["operation"] == "*":
-        prod = 1
-        for el in state["data"]:
-            prod *= el
-        state["data"] = prod
+def greeting_node(state:State)-> State:
+    state["final_result"] = state['name'] + " welcome to the system "
+    return state
+
+def user_age(state:State) ->State:
+    state["final_result"] += "You are " + state["age"] + " years old "
+    return state
+
+def list_skills(state:State) -> State:
+    state["final_result"] += " You have skills in "+ " ".join(state["skills"])
     return state
 
 graph_builder = StateGraph(State)
-graph_builder.add_node("init_list", init_list)
-graph_builder.set_entry_point("init_list")
-graph_builder.set_finish_point("init_list")
+graph_builder.add_node("greeting_node",greeting_node)
+graph_builder.add_node("user_age", user_age)
+graph_builder.add_node("list_skills",list_skills)
+
+graph_builder.add_edge("greeting_node", "user_age")
+graph_builder.add_edge("user_age", "list_skills")
+
+graph_builder.set_entry_point("greeting_node")
+graph_builder.set_finish_point("list_skills")
+
 app = graph_builder.compile()
 
-result = app.invoke({"data":[1,2,4,5,5], "name": "Michele", "operation": "+"})
-print(f"Hi {result["name"]}, your answer is: {result["data"]} ")
+result = app.invoke({"name": "Michele", "age": "21", "skills": ["Deep Learning", "AI", "Machine Learning "]})
+print(result["final_result"])
+
