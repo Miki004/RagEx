@@ -75,7 +75,7 @@ def our_agent(state:State) -> State:
     if hasattr(response,"tool_calls"):
         print(f"USING TOOLS: {[tc["name"] for tc in response.tool_calls]}")
     
-    return {"messages": list(state["messages"] + [user_message, response])}
+    return {"messages": list(state["messages"]) + [user_message, response]}
 
 def should_continue(state:State) -> State:
     ''' Determina se continua o finire la conversazione'''
